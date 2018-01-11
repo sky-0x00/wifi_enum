@@ -5,9 +5,10 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <cassert>
 
 /*static*/ string_t guid::get_text( 
-	_in const GUID &guid, 
+	_in const guid_t &guid, 
 	_in const convert_params *p_convert_params /*= nullptr*/
 ) {
 	static const convert_params convert_params__default = { case_type::upper, true };
@@ -64,5 +65,55 @@
 	if ( p_convert_params->is_append_brakets )
 		result.push_back( L'}' );
 
+	return result;
+}
+
+string_t string::convert( 
+	_in const char *str,
+	_in unsigned length /*= length_unknown*/
+) {
+	assert( str );	
+	
+	auto get_char = []( _in unsigned char ch ) -> char_t
+	{
+		if ( ch < 0x80 )					// ascii-
+			return ch;
+
+		if ( ch >= 0xC0 )					// 'À'..'ß', 'à'...'ÿ'
+			return ch + 0x350;
+
+		switch (ch)
+		{
+			case 0xA8:						// '¨'
+				return ch + 0x359;
+			case 0xB8:						// '¸'
+				return ch + 0x399;
+		}
+
+		trace.out( trace::category::error, L"string::convert( ch: '0x%02X' ): not_supported", ch );
+		throw std::exception( "" );
+	};
+
+	string_t result;
+
+	if ( length_unknown != length )
+	{
+		result.reserve( length );
+		for ( ; *str; ++str )
+		{
+			if ( 0 == length-- )
+				break;
+			const auto ch = get_char( *str );
+			result.push_back( ch );
+		}
+	} else 
+	{
+		for ( ; *str; ++str )
+		{
+			const auto ch = get_char( *str );
+			result.push_back( ch );			
+		}
+	}
+	
 	return result;
 }

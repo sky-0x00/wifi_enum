@@ -18,4 +18,7 @@ enum class case_type {
 #include <string>
 typedef std::wstring string_t;
 
+#include <guiddef.h>
+typedef GUID guid_t;
+
 typedef void *handle_t;
