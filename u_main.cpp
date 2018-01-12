@@ -50,18 +50,21 @@ int wmain(
 
 		for ( const auto &network : networks )
 		{
+			PWLAN_BSS_LIST BssList = nullptr;
+			wifi.get_network_bsslist( iface.guid, network, &BssList );
+
 			wprintf_s( L"\n  %u:\n    ssid: %s", ++i_network, network.ssid.c_str() );
 			if ( !network.profile_name.empty() )
 				wprintf_s( L" (profile: %s)", network.profile_name.c_str() );
 
 			{
-				auto get__network_topology__name = []( _in wlan::network::bss_type network_topology ) -> cstr_t
+				auto get__network_topology__name = []( _in wlan::network::bss::type network_topology ) -> cstr_t
 				{
 					switch ( network_topology )
 					{
-						case wlan::network::bss_type::infrastructure:
+						case wlan::network::bss::type::infrastructure:
 							return L"infrastructure";
-						case wlan::network::bss_type::adhoc:
+						case wlan::network::bss::type::adhoc:
 							return L"adhoc";
 						default:
 							trace.out( trace::category::error, L"network.topology: ? (%i)", static_cast< int >( network_topology ) );

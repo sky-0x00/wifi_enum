@@ -42,7 +42,7 @@ public:
 
 	enum class category {
 		normal,
-		//warning,
+		warning,
 		error
 	};
 

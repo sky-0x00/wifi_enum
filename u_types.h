@@ -2,8 +2,10 @@
 
 #define _in
 #define _out
+#define _optional
 #define char_null L'\0'
 
+typedef unsigned char byte_t;
 typedef unsigned short ushort_t;
 
 typedef wchar_t char_t;

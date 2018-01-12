@@ -117,3 +117,71 @@ string_t string::convert(
 	
 	return result;
 }
+
+void ssid::set_name( 
+	_in cstr_t name, 
+	_out DOT11_SSID &ssid 
+) {
+	if ( !name )
+	{
+		ssid.uSSIDLength = 0;
+		return;
+	}
+
+	for ( ssid.uSSIDLength = 0; name[ ssid.uSSIDLength ]; )
+	{
+		ssid.ucSSID[ ssid.uSSIDLength ] = static_cast< UCHAR >( name[ ssid.uSSIDLength ] );
+		if ( ++ssid.uSSIDLength == DOT11_SSID_MAX_LENGTH )
+		{
+			trace.out( trace::category::warning, L"ssid name \"%s\" is trancated to %u chars", name, ssid.uSSIDLength );
+			break;
+		}
+	}
+}
+
+address::mac::mac(
+) :
+	data( {} )
+{}
+address::mac::mac(
+	_in const DOT11_MAC_ADDRESS &address
+) {
+	assign( address );
+}
+void address::mac::assign(
+	_in const DOT11_MAC_ADDRESS &address
+) {
+	memcpy( &data, &address, sizeof(data) );
+}
+
+string_t address::mac::to_string( 
+	_in const DOT11_MAC_ADDRESS &address,
+	_in const convert_params *p_convert_params /*= nullptr*/
+) {
+	static const convert_params convert_params__default = { case_type::upper };
+	if ( !p_convert_params )
+		p_convert_params = &convert_params__default;
+
+	char_t format[] = L":%0X";
+	if ( case_type::upper != p_convert_params->case_type )
+		format[ _countof(format) - 1 ] = L'x';
+
+	char_t buffer[ 3 * sizeof(address) ], *p_buffer = buffer;
+
+	auto offset = swprintf_s( buffer, format + 1, address[0] );
+	assert( 2 == offset );
+
+	for ( unsigned i = 0; ++i < sizeof(address); )
+	{
+		p_buffer += offset;
+		offset = swprintf_s( p_buffer, p_buffer - buffer, format, address[i] );
+		assert( 3 == offset );
+	}
+
+	return buffer;
+}
+string_t address::mac::to_string( 
+	_in const convert_params *p_convert_params /*= nullptr*/
+) {
+	return to_string( data, p_convert_params );
+}

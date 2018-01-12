@@ -5,6 +5,8 @@
 #include <windows.h>
 #include <wlanapi.h>
 
+#define aas
+
 namespace wlan {
 
 	typedef unsigned long version;
@@ -34,10 +36,15 @@ namespace wlan {
 
 	struct network {
 
-		enum class bss_type {			// basic service set (bss) network type - "топология"
-			infrastructure	= dot11_BSS_type_infrastructure,
-			adhoc			= dot11_BSS_type_independent,
-			//any				= dot11_BSS_type_any		// ?
+		struct bss {
+
+			enum class type {			// basic service set (bss) network type - "топология"
+				infrastructure	= dot11_BSS_type_infrastructure,
+				adhoc			= dot11_BSS_type_independent,
+				//any			= dot11_BSS_type_any		// ?
+			};
+
+			address::mac mac;
 		};
 
 		//network();
@@ -48,7 +55,7 @@ namespace wlan {
 
 		string_t profile_name;
 		string_t ssid;
-		bss_type topology;
+		bss::type topology;
 		unsigned bssid_count;									// 
 		WLAN_REASON_CODE notconnactable_reasoncode;
 		// TODO: PhyTypes - структура (ф-ия WlanGetNetworkBssList)
@@ -73,6 +80,8 @@ namespace wlan {
 		manager( _in version version = 2 );
 		~manager();
 
+		handle_t get_handle() const;
+
 		void enum_ifaces( 
 			_out std::vector< iface > &ifaces 
 		) const;
@@ -80,6 +89,15 @@ namespace wlan {
 			_in const guid_t &iface_guid, 
 			_in DWORD flags /*= WLAN_AVAILABLE_NETWORK_INCLUDE_ALL_ADHOC_PROFILES | WLAN_AVAILABLE_NETWORK_INCLUDE_ALL_MANUAL_HIDDEN_PROFILES*/, 
 			_out std::vector< network > &networks
+		) const;
+		void get_network_bsslist(
+			_in const guid_t &iface_guid, 
+			_out PWLAN_BSS_LIST	*ppWlanBssList
+		) const;
+		void get_network_bsslist(
+			_in const guid_t &iface_guid, 
+			_in const network &network,
+			_out PWLAN_BSS_LIST	*ppWlanBssList
 		) const;
 
 	private:

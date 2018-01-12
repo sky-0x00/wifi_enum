@@ -1,7 +1,9 @@
 #pragma once
 
 #include "u_types.h"
-#include <guiddef.h>
+//#include <guiddef.h>
+#include <windows.h>
+#include <wlanapi.h>
 
 namespace stdex 
 {
@@ -27,4 +29,28 @@ namespace string
 	const unsigned length_unknown = UINT_MAX;
 
 	string_t convert( _in const char *str, _in unsigned length = length_unknown );
+}
+
+namespace ssid
+{
+	void set_name( _in cstr_t name, _out DOT11_SSID &ssid );
+}
+
+namespace address
+{
+	struct mac
+	{
+		struct convert_params {
+			case_type case_type;
+		};
+
+		static string_t to_string( _in const DOT11_MAC_ADDRESS &address, _in const convert_params *p_convert_params = nullptr );
+		
+		mac();
+		mac( _in const DOT11_MAC_ADDRESS &address );
+		void assign( _in const DOT11_MAC_ADDRESS &address );
+		string_t to_string( _in const convert_params *p_convert_params = nullptr );
+
+		DOT11_MAC_ADDRESS data;
+	};
 }

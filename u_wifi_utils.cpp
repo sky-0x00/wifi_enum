@@ -4,6 +4,7 @@
 #include "u_utils.h"
 #include <map>
 #include <cassert>
+#include <sstream>
 
 // Native Wifi: https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms706556(v=vs.85).aspx
 #pragma comment( lib, "wlanapi.lib" )
@@ -40,15 +41,24 @@ namespace wlan {
 		) {
 			return ::WlanGetAvailableNetworkList( hClient, pInterface, dwFlags, nullptr, ppNetworkList );
 		}
-		//DWORD WINAPI WlanGetNetworkBssList(
-		//  _In_             HANDLE         hClientHandle,
-		//  _In_       const GUID           *pInterfaceGuid,
-		//			 const  PDOT11_SSID   pDot11Ssid,
-		//  _In_             DOT11_BSS_TYPE dot11BssType,
-		//  _In_             BOOL           bSecurityEnabled,
-		//  _Reserved_       PVOID          pReserved,
-		//  _Out_            PWLAN_BSS_LIST *ppWlanBssList
-		//);
+		DWORD get_network_bsslist(
+			_in				HANDLE			hClient,
+			_in				const GUID		*pInterface,
+			_in _optional	cstr_t			pszSsid,				// если NULL, то возвращаются информация обо всех bss на указанном интерфейсе
+			_in	_optional	DOT11_BSS_TYPE	BssType,				// любое значение из bss_type, либо их or- объединение (валидно, если pszSsid != NULL)
+			_in _optional	bool			bSecurityEnabled,		// (валидно, если pszSsid != NULL)
+			_out			PWLAN_BSS_LIST	*ppWlanBssList
+		) {
+			if ( pszSsid ) 
+			{
+				DOT11_SSID Ssid;
+				ssid::set_name( pszSsid, Ssid );				
+
+				return ::WlanGetNetworkBssList( hClient, pInterface, &Ssid, BssType, bSecurityEnabled, nullptr, ppWlanBssList );
+			} 
+			
+			return ::WlanGetNetworkBssList( hClient, pInterface, nullptr, BssType, bSecurityEnabled, nullptr, ppWlanBssList );
+		}
 
 		VOID memory_free(
 			_in PVOID	pMemory
@@ -97,7 +107,7 @@ namespace wlan {
 	) :
 		profile_name( info.strProfileName ),
 		ssid( string::convert( reinterpret_cast< const char* >(info.dot11Ssid.ucSSID), info.dot11Ssid.uSSIDLength ) ),
-		topology( static_cast< enum class bss_type >( info.dot11BssType ) ),
+		topology( static_cast< enum class bss::type >( info.dot11BssType ) ),
 		bssid_count( info.uNumberOfBssids ),
 		notconnactable_reasoncode( info.bNetworkConnectable ? WLAN_REASON_CODE_SUCCESS : info.wlanNotConnectableReason ),
 		signal_level__percentage( info.wlanSignalQuality ),
@@ -123,6 +133,7 @@ namespace wlan {
 		assert( stdex::in_range< char >( result, { -100, -50+1 } ) );
 		return result;
 	}
+
 
 	manager::manager(
 		_in version version /*= 2*/
@@ -151,6 +162,11 @@ namespace wlan {
 			trace.out( trace::category::error, L"d_tor(): %08x, handle: %p", result, m_handle );
 			//throw std::exception( "", result );
 		}
+	}
+
+	handle_t manager::get_handle(
+	) const {
+		return m_handle;
 	}
 
 	void manager::enum_ifaces( 
@@ -197,5 +213,25 @@ namespace wlan {
 			networks.emplace_back( pNetworkList->Network[ pNetworkList->dwIndex ] );
 
 		native::memory_free( pNetworkList );
+	}
+
+	void manager::get_network_bsslist(
+		_in const guid_t &iface_guid, 
+		_out PWLAN_BSS_LIST	*ppWlanBssList
+	) const {
+
+		native::get_network_bsslist( m_handle, &iface_guid, nullptr, dot11_BSS_type_any, false, ppWlanBssList );
+	}
+	void manager::get_network_bsslist(
+		_in const guid_t &iface_guid, 
+		_in const network &network,
+		_out PWLAN_BSS_LIST	*ppWlanBssList
+	) const {
+	
+		native::get_network_bsslist( 
+			m_handle, &iface_guid, 
+			network.ssid.c_str(), static_cast< DOT11_BSS_TYPE >(network.topology), network.security.is_enabled, 
+			ppWlanBssList
+		);
 	}
 }
