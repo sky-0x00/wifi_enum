@@ -13,7 +13,9 @@ namespace wlan {
 
 	namespace native {
 
-		DWORD handle_open( 
+		typedef DWORD status;
+
+		status handle_open( 
 			_in		DWORD	dwClientVersion /*= 2*/,
 			_out	PDWORD	pdwNegotiatedVersion,
 			_out	PHANDLE	phClient
@@ -21,19 +23,19 @@ namespace wlan {
 			return ::WlanOpenHandle( dwClientVersion, nullptr, pdwNegotiatedVersion, phClient );
 		}
 
-		DWORD handle_close(
+		status handle_close(
 			_in		HANDLE	hClient
 		) {
 			return ::WlanCloseHandle( hClient, nullptr );
 		}
 
-		DWORD enum_ifaces(
+		status enum_ifaces(
 			_in		HANDLE	hClient,
 			_out	PWLAN_INTERFACE_INFO_LIST *ppInterfaceList
 		) {
 			return ::WlanEnumInterfaces( hClient, nullptr, ppInterfaceList );
 		}
-		DWORD get_network_list(
+		status get_network_list(
 			_in		HANDLE		hClient,
 			_in		const GUID	*pInterface,
 			_in		DWORD		dwFlags,
@@ -41,7 +43,7 @@ namespace wlan {
 		) {
 			return ::WlanGetAvailableNetworkList( hClient, pInterface, dwFlags, nullptr, ppNetworkList );
 		}
-		DWORD get_network_bsslist(
+		status get_network_bsslist(
 			_in				HANDLE			hClient,
 			_in				const GUID		*pInterface,
 			_in _optional	cstr_t			pszSsid,				// если NULL, то возвращаются информация обо всех bss на указанном интерфейсе
@@ -60,6 +62,16 @@ namespace wlan {
 			return ::WlanGetNetworkBssList( hClient, pInterface, nullptr, BssType, bSecurityEnabled, nullptr, ppWlanBssList );
 		}
 
+		status set_iface(
+			_in	HANDLE				hClient,
+			_in	const GUID			*pInterface,
+			_in	WLAN_INTF_OPCODE	OpCode,
+			_in	const VOID			*pData,
+			_in	DWORD				dwDataSize
+		) {
+			return ::WlanSetInterface( hClient, pInterface, OpCode, dwDataSize, const_cast<PVOID>(pData), nullptr );
+		}
+
 		VOID memory_free(
 			_in PVOID	pMemory
 		) {
@@ -75,7 +87,7 @@ namespace wlan {
 	iface::iface(
 	) :
 		guid( GUID_NULL),
-		state( state_t::not_ready )
+		state( state::not_ready )
 	{}
 	
 	iface::iface( 
@@ -83,20 +95,20 @@ namespace wlan {
 	) :
 		guid( info.InterfaceGuid ),
 		description( info.strInterfaceDescription ),
-		state( static_cast< enum class state_t >( info.isState ) )
+		state( static_cast< enum class state >( info.isState ) )
 	{}
 
 	cstr_t iface::get_state_text(
 	) const {
-		const static std::map< enum class state_t, cstr_t > map_state = {
-			{ state_t::not_ready, 				L"not_ready" },
-			{ state_t::connected, 				L"connected" },
-			{ state_t::adhoc_network_formed,	L"adhoc_network_formed" },
-			{ state_t::disconnecting,			L"disconnecting" },
-			{ state_t::disconnected,			L"disconnected" },
-			{ state_t::associating,				L"associating" },
-			{ state_t::discovering,				L"discovering" },
-			{ state_t::authenticating,			L"authenticating" }
+		const static std::map< enum class state, cstr_t > map_state = {
+			{ state::not_ready, 				L"not_ready" },
+			{ state::connected, 				L"connected" },
+			{ state::adhoc_network_formed,	L"adhoc_network_formed" },
+			{ state::disconnecting,			L"disconnecting" },
+			{ state::disconnected,			L"disconnected" },
+			{ state::associating,				L"associating" },
+			{ state::discovering,				L"discovering" },
+			{ state::authenticating,			L"authenticating" }
 		};
 		return map_state.at( state );
 	}
@@ -105,8 +117,10 @@ namespace wlan {
 	network::network( 
 		_in const WLAN_AVAILABLE_NETWORK &info 
 	) :
-		profile_name( info.strProfileName ),
-		ssid( string::convert( reinterpret_cast< const char* >(info.dot11Ssid.ucSSID), info.dot11Ssid.uSSIDLength ) ),
+		name( { 
+			string::convert( reinterpret_cast< const char* >(info.dot11Ssid.ucSSID), info.dot11Ssid.uSSIDLength ),
+			info.strProfileName 
+		}),
 		topology( static_cast< enum class bss::type >( info.dot11BssType ) ),
 		bssid_count( info.uNumberOfBssids ),
 		notconnactable_reasoncode( info.bNetworkConnectable ? WLAN_REASON_CODE_SUCCESS : info.wlanNotConnectableReason ),
@@ -119,7 +133,7 @@ namespace wlan {
 			(!info.bNetworkConnectable && (info.wlanNotConnectableReason != WLAN_REASON_CODE_SUCCESS) )
 		);
 		assert( info.wlanSignalQuality <= 100 );
-		assert( info.dot11BssType != dot11_BSS_type_any );
+		assert( (info.dot11BssType == dot11_BSS_type_infrastructure) || (info.dot11BssType == dot11_BSS_type_independent) );
 	}
 
 	bool network::is_connectable(
@@ -198,11 +212,11 @@ namespace wlan {
 	) const {
 
 		PWLAN_AVAILABLE_NETWORK_LIST pNetworkList = nullptr;
-		const auto result = native::get_network_list( m_handle, &iface_guid, flags, &pNetworkList );
+		const auto status = native::get_network_list( m_handle, &iface_guid, flags, &pNetworkList );
 
-		if ( ERROR_SUCCESS != result ) {
-			trace.out( trace::category::error, L"get_network_list(): %08x", result );
-			throw std::exception( "", result );
+		if ( ERROR_SUCCESS != status ) {
+			trace.out( trace::category::error, L"get_network_list(): %08x", status );
+			throw std::exception( "", status );
 		}
 
 		trace.out( trace::category::normal, L"get_network_list(): ok, %u network(s)", pNetworkList->dwNumberOfItems );
@@ -218,20 +232,80 @@ namespace wlan {
 	void manager::get_network_bsslist(
 		_in const guid_t &iface_guid, 
 		_out PWLAN_BSS_LIST	*ppWlanBssList
-	) const {
-
-		native::get_network_bsslist( m_handle, &iface_guid, nullptr, dot11_BSS_type_any, false, ppWlanBssList );
+	) const 
+	{
+		const auto status = native::get_network_bsslist( m_handle, &iface_guid, nullptr, dot11_BSS_type_any, false, ppWlanBssList );
+		assert( ERROR_SUCCESS == status );
 	}
 	void manager::get_network_bsslist(
 		_in const guid_t &iface_guid, 
 		_in const network &network,
 		_out PWLAN_BSS_LIST	*ppWlanBssList
-	) const {
-	
-		native::get_network_bsslist( 
+	) const 
+	{	
+		const auto status = native::get_network_bsslist( 
 			m_handle, &iface_guid, 
-			network.ssid.c_str(), static_cast< DOT11_BSS_TYPE >(network.topology), network.security.is_enabled, 
+			network.name.ssid.c_str(), static_cast< DOT11_BSS_TYPE >(network.topology), network.security.is_enabled, 
 			ppWlanBssList
 		);
+		assert( ERROR_SUCCESS == status );
+	}
+
+	void manager::get_network_bsslist(
+		_in const guid_t &iface_guid, 
+		_in const network &network,
+		_out std::vector< network::bss > &bss_list
+	) const 
+	{
+		bss_list.clear();
+		PWLAN_BSS_LIST pBssList = nullptr;
+
+		const auto status = native::get_network_bsslist( 
+			m_handle, &iface_guid, 
+			network.name.ssid.c_str(), static_cast< DOT11_BSS_TYPE >(network.topology), network.security.is_enabled, 
+			&pBssList
+		);
+		assert( ERROR_SUCCESS == status );
+
+		auto count = pBssList->dwNumberOfItems;
+		for ( bss_list.reserve( count ); count--; )
+		{
+			const auto &BssEntry = pBssList->wlanBssEntries[count];
+			assert( (BssEntry.dot11BssType == dot11_BSS_type_infrastructure) || (BssEntry.dot11BssType == dot11_BSS_type_independent) );
+			assert( network.topology == static_cast< enum class network::bss::type >( BssEntry.dot11BssType ) );
+
+			network::bss bss_entry; //= 
+			//{
+			//	/*topology =*/ static_cast< enum class network::bss::type >(network.topology),
+			//	/*id =*/ address::mac(BssEntry.dot11Bssid),
+			//	/*phy =*/ struct network::bss::phy({ BssEntry.uPhyId })
+			//};
+			bss_entry.topology = network.topology;
+			bss_entry.id.assign( BssEntry.dot11Bssid );
+			bss_entry.phy = { BssEntry.uPhyId };
+			
+			bss_list.push_back( bss_entry );
+		}
+
+		native::memory_free( pBssList );
+	}
+
+	/*protected*/ void manager::set_iface( 
+		_in const guid_t &iface_guid, 
+		_in iface::opcode iface_opcode,
+		_in const data::untyped &param
+	) const
+	{
+		assert( param.pdata && ( param.size > 0 ) );
+		const auto status = native::set_iface( m_handle, &iface_guid, static_cast< WLAN_INTF_OPCODE >( iface_opcode ), param.pdata, param.size );
+		assert( ERROR_SUCCESS == status );
+	}
+	void manager::set_iface__operation_mode( 
+		_in const guid_t &iface_guid, 
+		_in unsigned value 
+	) const
+	{
+		const data::untyped param( value );
+		set_iface( iface_guid, iface::opcode::current_operation_mode, param );
 	}
 }

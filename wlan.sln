@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wifi_enum", "wifi_enum\wifi_enum.vcxproj", "{8351A798-7C12-4D45-9551-A40655020538}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ndis_moniport", "ndis_moniport\ndis_moniport.vcxproj", "{47576BC8-3300-4405-A09E-5A36D8FB9D3D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|Win32.Build.0 = Debug|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|x64.ActiveCfg = Debug|x64
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|x64.Build.0 = Debug|x64
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|x86.ActiveCfg = Debug|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Debug|x86.Build.0 = Debug|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|Win32.ActiveCfg = Release|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|Win32.Build.0 = Release|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|x64.ActiveCfg = Release|x64
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|x64.Build.0 = Release|x64
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|x86.ActiveCfg = Release|Win32
+		{8351A798-7C12-4D45-9551-A40655020538}.Release|x86.Build.0 = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|Win32.Build.0 = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|x64.ActiveCfg = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|x86.ActiveCfg = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Debug|x86.Build.0 = Debug|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|Win32.ActiveCfg = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|Win32.Build.0 = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|x64.ActiveCfg = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|x86.ActiveCfg = Release|Win32
+		{47576BC8-3300-4405-A09E-5A36D8FB9D3D}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

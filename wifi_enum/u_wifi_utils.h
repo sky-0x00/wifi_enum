@@ -1,6 +1,6 @@
 #pragma once
 
-#include "u_types.h"
+#include "u_utils.h"
 #include <vector>
 #include <windows.h>
 #include <wlanapi.h>
@@ -13,7 +13,16 @@ namespace wlan {
 
 	struct iface {					// аналог WLAN_INTERFACE_INFO
 
-		enum class state_t {		// аналог WLAN_INTERFACE_STATE (поле структуры WLAN_INTERFACE_INFO)
+		enum class opcode {
+			autoconf_enabled			= wlan_intf_opcode_autoconf_enabled,
+			background_scan_enabled		= wlan_intf_opcode_background_scan_enabled,
+			radio_state					= wlan_intf_opcode_radio_state,
+			bss_type					= wlan_intf_opcode_bss_type,
+			media_streaming_mode		= wlan_intf_opcode_media_streaming_mode,
+			current_operation_mode		= wlan_intf_opcode_current_operation_mode
+		};
+		
+		enum class state {		// аналог WLAN_INTERFACE_STATE (поле структуры WLAN_INTERFACE_INFO)
 			not_ready				= wlan_interface_state_not_ready,
 			connected				= wlan_interface_state_connected,
 			adhoc_network_formed	= wlan_interface_state_ad_hoc_network_formed,
@@ -31,7 +40,7 @@ namespace wlan {
 
 		guid_t		guid;
 		string_t	description;
-		state_t		state;
+		state		state;
 	};
 
 	struct network {
@@ -43,8 +52,16 @@ namespace wlan {
 				adhoc			= dot11_BSS_type_independent,
 				//any			= dot11_BSS_type_any		// ?
 			};
+			struct phy {
+				/*enum class type {
+				};*/
+				unsigned long id;
+				//type type;
+			};
 
-			address::mac mac;
+			type topology;
+			address::mac id;
+			phy phy;
 		};
 
 		//network();
@@ -53,8 +70,10 @@ namespace wlan {
 		bool is_connectable() const;
 		char get__signal_level__rssi() const;
 
-		string_t profile_name;
-		string_t ssid;
+		struct {
+			string_t ssid, profile;
+		} 
+		name;
 		bss::type topology;
 		unsigned bssid_count;									// 
 		WLAN_REASON_CODE notconnactable_reasoncode;
@@ -98,6 +117,23 @@ namespace wlan {
 			_in const guid_t &iface_guid, 
 			_in const network &network,
 			_out PWLAN_BSS_LIST	*ppWlanBssList
+		) const;
+		void get_network_bsslist(
+			_in const guid_t &iface_guid, 
+			_in const network &network,
+			_out std::vector< network::bss > &bss_list
+		) const;
+		
+		void set_iface__operation_mode( 
+			_in const guid_t &iface_guid, 
+			_in unsigned value
+		) const;
+
+	protected:
+		void set_iface( 
+			_in const guid_t &iface_guid, 
+			_in iface::opcode iface_opcode,
+			_in const data::untyped &param
 		) const;
 
 	private:

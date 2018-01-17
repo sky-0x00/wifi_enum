@@ -1,7 +1,6 @@
 #pragma once
 
-#include "u_types.h"
-//#include <guiddef.h>
+#include "..\common\u_types.h"
 #include <windows.h>
 #include <wlanapi.h>
 
@@ -49,7 +48,7 @@ namespace address
 		mac();
 		mac( _in const DOT11_MAC_ADDRESS &address );
 		void assign( _in const DOT11_MAC_ADDRESS &address );
-		string_t to_string( _in const convert_params *p_convert_params = nullptr );
+		string_t to_string( _in const convert_params *p_convert_params = nullptr ) const;
 
 		DOT11_MAC_ADDRESS data;
 	};

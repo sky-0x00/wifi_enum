@@ -140,9 +140,9 @@ void ssid::set_name(
 }
 
 address::mac::mac(
-) :
-	data( {} )
-{}
+) {
+	std::fill( std::begin(data), std::end(data), 0 );
+}
 address::mac::mac(
 	_in const DOT11_MAC_ADDRESS &address
 ) {
@@ -151,10 +151,10 @@ address::mac::mac(
 void address::mac::assign(
 	_in const DOT11_MAC_ADDRESS &address
 ) {
-	memcpy( &data, &address, sizeof(data) );
+	std::copy( std::cbegin(address), std::cend(address), std::begin(data) );
 }
 
-string_t address::mac::to_string( 
+/*static*/ string_t address::mac::to_string( 
 	_in const DOT11_MAC_ADDRESS &address,
 	_in const convert_params *p_convert_params /*= nullptr*/
 ) {
@@ -162,7 +162,7 @@ string_t address::mac::to_string(
 	if ( !p_convert_params )
 		p_convert_params = &convert_params__default;
 
-	char_t format[] = L":%0X";
+	char_t format[] = L":%02X";
 	if ( case_type::upper != p_convert_params->case_type )
 		format[ _countof(format) - 1 ] = L'x';
 
@@ -174,7 +174,7 @@ string_t address::mac::to_string(
 	for ( unsigned i = 0; ++i < sizeof(address); )
 	{
 		p_buffer += offset;
-		offset = swprintf_s( p_buffer, p_buffer - buffer, format, address[i] );
+		offset = swprintf_s( p_buffer, _countof(buffer) - (p_buffer - buffer), format, address[i] );
 		assert( 3 == offset );
 	}
 
@@ -182,6 +182,7 @@ string_t address::mac::to_string(
 }
 string_t address::mac::to_string( 
 	_in const convert_params *p_convert_params /*= nullptr*/
-) {
+) const
+{
 	return to_string( data, p_convert_params );
 }
